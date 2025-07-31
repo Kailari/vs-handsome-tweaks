@@ -61,107 +61,41 @@ public static class EntityItemPatch {
 	}
 
 	private static readonly MethodInfo s_renderMethod = AccessTools.Method(typeof(IRenderAPI), nameof(IRenderAPI.RenderMultiTextureMesh));
+	private static readonly MethodInfo s_renderMethodOverride = SymbolExtensions.GetMethodInfo(() => RenderMultiTextureMeshOverride(default, default, default, default, default, default, default));
+
 
 	[HarmonyTranspiler]
 	[HarmonyPatch(typeof(EntityItemRenderer), nameof(EntityItemRenderer.DoRender3DOpaque))]
-	public static IEnumerable<CodeInstruction> TranspileDoRender3DOpaque(IEnumerable<CodeInstruction> instructions) {
-		var success = false;
-		foreach (var instruction in instructions) {
-			// If the instruction is a call to the render method, hijack it.
-			if (instruction.Calls(s_renderMethod)) {
-				/*
-				The stack already contains the this-arg and all other original
-				arguments. Any arguments loaded to the stack here are appended
-				after those. Ordering is FIFO, with the implicit this arg as
-				the 0th arg.
+	public static IEnumerable<CodeInstruction> TranspileDoRender3DOpaque(IEnumerable<CodeInstruction> instructions, ILGenerator generator) {
+		var matcher = new CodeMatcher(instructions, generator);
+		const int SHADOW_PASS_ARG_INDEX = 2;
 
-				That is, the code assumes the original IL is something like:
-				   1	ldloc <idx of render (this arg)>
-				   2	ldloc <idx of itemStackRenderInfo>
-				   3	call instance MultiTextureMeshRef ItemRenderInfo::get_ModelRef()
-				   4	ldloc <idx of textureSampleName>
-				   5	ldc.i4.0
-				   6	call instance void IRenderAPI::RenderMultiTextureMesh(int32, string, MultiTextureMeshRef)
-
-				The current instruction being processed is the (6). That is,
-				all of instructions 1-5 are already yielded on the stack.
-
-				The call to get_ModelRef() pops the value pushed at 2 off the
-				stack (that is the itemStackRenderInfo). This leaves the top of
-				the stack as (from top to bottom):
-				   1. constant zero, the texture number (1)
-				   2. texture sample name (2)
-				   3. reference to IRenderAPI (5)
-				   4. reference to the MultiTextureMeshRef (4)
-
-
-				In order to make the wrapper work, a few extra arguments are
-				needed. As the parameters are already on the stack, any
-				parameters we append now, will appear after those.
-
-				We need to insert four extra arguments:
-				   1	itemRenderer: EntityItemRenderer
-				   2	item: EntityItem
-				   3	isShadowPass: bool.
-
-				The item renderer is the instance itself, thus it is just the
-				argument zero (implicit this-argument in the local scope).
-
-				The item argument is a private field of the instance of the
-				class being patched. This requires additional ldfld, with
-				corresponding instance on the stack.
-
-				The isShadowPass (3) is just an argument of the patched method.
-				Therefore, its index can be easily identified from the method
-				signature. The 0th parameter is the this-argument, 'dt' is at
-				index 1 and thus 'isShadowPass' is the index two.
-
-
-				The final IL is something akin to:
-				   5	ldloc <idx of render>
-				   3	ldloc <idx of itemStackRenderInfo>
-				   4	call instance MultiTextureMeshRef ItemRenderInfo::get_ModelRef()
-				   2	ldloc <idx of textureSampleName>
-				   1	ldc.i4.0
-				   7	ldarg.0
-				   9	ldarg.0
-				   8	ldfld EntityItem EntityItemRenderer::entityitem
-				   6	ldarg.2
-				   10	call instance void <The wrapper in EntityItemPatch>
-
-				Note that the original call instruction is dropped and only
-				the call to the wrapper remains (10).
-				*/
-
-				///////////////////////////////////////////////////////////////
-				// PUSH extra args
-				const int SHADOW_PASS_ARG_INDEX = 2;
+		matcher
+			.MatchStartForward(CodeMatch.Calls(s_renderMethod))
+			.ThrowIfNotMatch("Could not find the main drawcall!")
+			// Remove the main drawcall
+			.RemoveInstruction()
+			// Inject a wrapper with extra arguments
+			.InsertAndAdvance(
+				/* == Extra arguments == */
 
 				/* itemRenderer: this */
-				yield return CodeInstruction.LoadArgument(0);
-
+				CodeInstruction.LoadArgument(0),
 				/* item: this.entityitem */
-				yield return CodeInstruction.LoadArgument(0);
-				yield return CodeInstruction.LoadField(typeof(EntityItemRenderer), "entityitem");
+				CodeInstruction.LoadArgument(0),
+				CodeInstruction.LoadField(typeof(EntityItemRenderer), "entityitem"),
+				/* isShadowPass (forwarded from patched method args) */
+				CodeInstruction.LoadArgument(SHADOW_PASS_ARG_INDEX),
 
-				/* isShadowPass: isShadowPass */
-				yield return CodeInstruction.LoadArgument(SHADOW_PASS_ARG_INDEX);
+				/* == Call the wrapper == */
+				// Args includes all the arguments of the original (removed)
+				// call-instruction, with the extra ones above appended.
+				// The method signature must match this combination of original
+				// method args and extra args.
+				new CodeInstruction(OpCodes.Call, s_renderMethodOverride)
+			);
 
-				///////////////////////////////////////////////////////////////
-				// CALL
-				var replacement = new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(EntityItemPatch), nameof(RenderMultiTextureMeshOverride)));
-				yield return replacement;
-				success = true;
-			}
-			// Emit all other opcodes as-is.
-			else {
-				yield return instruction;
-			}
-		}
-
-		if (!success) {
-			throw new InvalidOperationException("Cannot find/wrap <CALL RenderMultiTextureMesh> in original DoRender3DOpaque");
-		}
+		return matcher.Instructions();
 	}
 
 	// Render call wrapper to render merged stacks as multiple copies.
@@ -171,16 +105,12 @@ public static class EntityItemPatch {
 	// "hidden" this-argument MUST be included and MUST be the first argument. All extra arguments
 	// MUST be manually pushed to the stack prior to the inserted call-opcode.
 	public static void RenderMultiTextureMeshOverride(
-		// Original args:
-		// Implicit this arg ??
+		/* Original args */
 		IRenderAPI @this,
 		MultiTextureMeshRef mmr,
-		// Value is passed, but always "tex" (or "tex2d" if isShadowPass is true)
 		string textureSampleName,
-		// Default arg, not supplied in original code, value is always zero
 		int textureNumber,
-
-		// Extra args:
+		/* Extra args */
 		EntityItemRenderer itemRenderer,
 		EntityItem entityitem,
 		bool isShadowPass
