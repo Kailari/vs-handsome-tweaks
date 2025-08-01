@@ -9,7 +9,7 @@
                 "build",
                 "-c",
                 "Debug",
-                "${workspaceFolder}/MergeStacksOnGround/MergeStacksOnGround.csproj"
+                "${workspaceFolder}/HandsomeTweaks/HandsomeTweaks.csproj"
             ],
             "problemMatcher": "$msCompile"
         },

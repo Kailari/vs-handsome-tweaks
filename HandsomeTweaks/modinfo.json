@@ -1,0 +1,13 @@
+{
+    "type": "code",
+    "modid": "handsometweaks",
+    "name": "Handsome Tweaks",
+    "authors": [
+        "Jakojäännös"
+    ],
+    "description": "Various tweaks and improvements to small gripes encountered while playing.",
+    "version": "1.0.0",
+    "dependencies": {
+        "game": ""
+    }
+}

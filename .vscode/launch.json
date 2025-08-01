@@ -9,7 +9,6 @@
             "type": "coreclr",
             "request": "launch",
             "program": "${env:VINTAGE_STORY}/Vintagestory.exe",
-            "justMyCode": false,
             "linux": {
                 "program": "${env:VINTAGE_STORY}/Vintagestory"
             },
@@ -18,15 +17,25 @@
             },
             "preLaunchTask": "build",
             "args": [
-                // "--playStyle" , "preset-surviveandbuild",
-                // "--openWorld" , "modding test world",
+                //"--playStyle",
+                //"preset-surviveandbuild",
+                //"--openWorld",
+                //"modding test world",
                 "--tracelog",
+                "--dataPath",
+                "${workspaceFolder}/run-client",
                 "--addModPath",
-                "${workspaceFolder}/MergeStacksOnGround/bin/Debug/Mods",
+                "${workspaceFolder}/HandsomeTweaks/bin/Debug/Mods",
                 "--addOrigin",
-                "${workspaceFolder}/MergeStacksOnGround/assets"
+                "${workspaceFolder}/HandsomeTweaks/assets"
             ],
             "console": "internalConsole",
+            "env": {
+                // FIXME: Temporary workaround for odd behaviour with multiple monitors and fractional scaling
+                // - enforce wayland to work through Xwayland instead of native support
+                // - this has performance implications, but fixes the window having different size than the framebuffers
+                "XDG_SESSION_TYPE": "x11",
+            },
             "stopAtEntry": false
         },
         {
@@ -43,10 +52,12 @@
             "preLaunchTask": "build",
             "args": [
                 "--tracelog",
+                "--dataPath",
+                "${workspaceFolder}/run-server",
                 "--addModPath",
-                "${workspaceFolder}/MergeStacksOnGround/bin/Debug/Mods",
-                 "--addOrigin",
-                 "${workspaceFolder}/MergeStacksOnGround/assets"
+                "${workspaceFolder}/HandsomeTweaks/bin/Debug/Mods",
+                "--addOrigin",
+                "${workspaceFolder}/HandsomeTweaks/assets"
             ],
             "console": "internalConsole",
             "stopAtEntry": false

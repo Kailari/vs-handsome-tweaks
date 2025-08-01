@@ -60,15 +60,15 @@ dotnet_naming_symbols.non_private_readonly_fields.required_modifiers = readonly
 
 dotnet_naming_style.non_private_readonly_field_style.capitalization = pascal_case
 
-# Constants are PascalCase
-dotnet_naming_rule.constants_should_be_pascal_case.severity = suggestion
-dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
-dotnet_naming_rule.constants_should_be_pascal_case.style = constant_style
+# Constants are ALL_CAPS
+dotnet_naming_rule.constants_should_be_all_caps.severity = suggestion
+dotnet_naming_rule.constants_should_be_all_caps.symbols = constants
+dotnet_naming_rule.constants_should_be_all_caps.style = constant_style
 
 dotnet_naming_symbols.constants.applicable_kinds = field, local
 dotnet_naming_symbols.constants.required_modifiers = const
 
-dotnet_naming_style.constant_style.capitalization = pascal_case
+dotnet_naming_style.constant_style.capitalization = all_upper
 
 # Static fields are camelCase and start with s_
 dotnet_naming_rule.static_fields_should_be_camel_case.severity = suggestion
@@ -80,6 +80,16 @@ dotnet_naming_symbols.static_fields.required_modifiers = static
 
 dotnet_naming_style.static_field_style.capitalization = camel_case
 dotnet_naming_style.static_field_style.required_prefix = s_
+
+# Static readonly fields are named like constants, with no prefixing
+dotnet_naming_rule.static_readonly_fields_are_constants.severity = suggestion
+dotnet_naming_rule.static_readonly_fields_are_constants.symbols = static_readonly_fields
+dotnet_naming_rule.static_readonly_fields_are_constants.style = static_readonly_field_style
+
+dotnet_naming_symbols.static_readonly_fields.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_fields.required_modifiers = static, readonly
+
+dotnet_naming_style.static_readonly_field_style.capitalization = all_upper
 
 # Instance fields are camelCase and start with _
 dotnet_naming_rule.instance_fields_should_be_camel_case.severity = suggestion

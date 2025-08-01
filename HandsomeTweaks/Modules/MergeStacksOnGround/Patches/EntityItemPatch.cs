@@ -1,25 +1,28 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Reflection.Emit;
 
 using HarmonyLib;
 
+using Jakojaannos.HandsomeTweaks.Util;
+
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
 using Vintagestory.GameContent;
 
-namespace Jakojaannos.MergeStacksOnGround.Patches;
+using static Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.ModuleInfo;
+
+namespace Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
 
 [HarmonyPatch]
+[HarmonyPatchCategory(PATCH_CATEGORY)]
 public static class EntityItemPatch {
-	private const string ATTRIBUTE_LISTENER_ID = "jakojaannos.mergestacksonground.listener";
-	private const string ATTRIBUTE_RENDER_STACK_COUNT = "jakojaannos.mergestacksonground.stacks";
+	private static readonly string ATTRIBUTE_LISTENER_ID = Attributes.Id(MODULE_ID, "listener");
+	private static readonly string ATTRIBUTE_RENDER_STACK_COUNT = Attributes.Id(MODULE_ID, "stacks");
 
-	private static readonly Vec3f[] s_offsets = new Vec3f[11] {
+	private static readonly Vec3f[] OFFSETS = [
 		new(0.0f, 0.0f, 0.0f),
 		new(-0.37f, 0.03f, 0.37f),
 		new(-0.34f, 0.06f, -0.34f),
@@ -31,7 +34,7 @@ public static class EntityItemPatch {
 		new(0.16f, 0.24f, 0.16f),
 		new(-0.13f, 0.27f, -0.13f),
 		new(0.1f, 0.3f, -0.1f),
-	};
+	];
 
 	[HarmonyPostfix]
 	[HarmonyPatch(typeof(EntityItem), nameof(EntityItem.Initialize))]
@@ -52,17 +55,11 @@ public static class EntityItemPatch {
 			return;
 		}
 
-		if (!__instance.Attributes.HasAttribute(ATTRIBUTE_LISTENER_ID)) {
-			return;
+		if (__instance.Attributes.HasAttribute(ATTRIBUTE_LISTENER_ID)) {
+			var listenerId = __instance.Attributes.GetLong(ATTRIBUTE_LISTENER_ID);
+			__instance.Api.Event.UnregisterGameTickListener(listenerId);
 		}
-
-		var listenerId = __instance.Attributes.GetLong(ATTRIBUTE_LISTENER_ID);
-		__instance.Api.Event.UnregisterGameTickListener(listenerId);
 	}
-
-	private static readonly MethodInfo s_renderMethod = AccessTools.Method(typeof(IRenderAPI), nameof(IRenderAPI.RenderMultiTextureMesh));
-	private static readonly MethodInfo s_renderMethodOverride = SymbolExtensions.GetMethodInfo(() => RenderMultiTextureMeshOverride(default, default, default, default, default, default, default));
-
 
 	[HarmonyTranspiler]
 	[HarmonyPatch(typeof(EntityItemRenderer), nameof(EntityItemRenderer.DoRender3DOpaque))]
@@ -71,9 +68,9 @@ public static class EntityItemPatch {
 		const int SHADOW_PASS_ARG_INDEX = 2;
 
 		matcher
-			.MatchStartForward(CodeMatch.Calls(s_renderMethod))
-			.ThrowIfNotMatch("Could not find the main drawcall!")
+			.Start()
 			// Remove the main drawcall
+			.MatchStartForward(CodeMatch.Calls(AccessTools.Method(typeof(IRenderAPI), nameof(IRenderAPI.RenderMultiTextureMesh))))
 			.RemoveInstruction()
 			// Inject a wrapper with extra arguments
 			.InsertAndAdvance(
@@ -92,10 +89,12 @@ public static class EntityItemPatch {
 				// call-instruction, with the extra ones above appended.
 				// The method signature must match this combination of original
 				// method args and extra args.
-				new CodeInstruction(OpCodes.Call, s_renderMethodOverride)
-			);
+				CodeInstruction.Call(typeof(EntityItemPatch), nameof(RenderMultiTextureMeshOverride))
+			)
+			.End();
 
-		return matcher.Instructions();
+		var result = matcher.Instructions();
+		return result;
 	}
 
 	// Render call wrapper to render merged stacks as multiple copies.
@@ -115,25 +114,24 @@ public static class EntityItemPatch {
 		EntityItem entityitem,
 		bool isShadowPass
 	) {
+		var stackCount = entityitem.WatchedAttributes.GetInt(ATTRIBUTE_RENDER_STACK_COUNT, 0) / 6;
+		var renderInstanceCount = Math.Clamp(stackCount, 1, OFFSETS.Length);
 		if (isShadowPass) {
+			renderInstanceCount = 1;
+		}
+
+		// HACK: assume standard shader is used
+		var shader = @this.StandardShader;
+
+		var adjustedModelMat = Mat4f.Create();
+		var originalModelMat = itemRenderer.ModelMat;
+		for (var i = 0; i < renderInstanceCount; ++i) {
+			var offset = OFFSETS[i];
+
+			Mat4f.Translate(adjustedModelMat, originalModelMat, offset.X, offset.Y, offset.Z);
+			shader.ModelMatrix = adjustedModelMat;
+
 			@this.RenderMultiTextureMesh(mmr, textureSampleName, textureNumber);
-		} else {
-			// HACK: assume standard shader is used
-			var shader = @this.StandardShader;
-
-			var stackCount = entityitem.WatchedAttributes.GetInt(ATTRIBUTE_RENDER_STACK_COUNT, 0) / 6;
-			var renderInstanceCount = Math.Clamp(stackCount, 1, 10);
-
-			var adjustedModelMat = Mat4f.Create();
-			var originalModelMat = itemRenderer.ModelMat;
-			for (var i = 0; i < renderInstanceCount; ++i) {
-				var offset = s_offsets[i];
-
-				Mat4f.Translate(adjustedModelMat, originalModelMat, offset.X, offset.Y, offset.Z);
-				shader.ModelMatrix = adjustedModelMat;
-
-				@this.RenderMultiTextureMesh(mmr, textureSampleName, textureNumber);
-			}
 		}
 	}
 
