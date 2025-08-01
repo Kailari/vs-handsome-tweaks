@@ -2,6 +2,8 @@ using Vintagestory.API.Common;
 using ConfigLib;
 using Jakojaannos.HandsomeTweaks.Config;
 
+using static Jakojaannos.HandsomeTweaks.ModInfo;
+
 namespace Jakojaannos.HandsomeTweaks.Compatibility.ConfigLib;
 
 internal class ConfigLibCompat {
@@ -27,15 +29,25 @@ internal class ConfigLibCompat {
 
 	private void SubscribeToConfigChange() {
 		_configLib.SettingChanged += (domain, config, setting) => {
-			if (domain != ModInfo.MOD_ID) {
+			if (domain != MOD_ID) {
 				return;
 			}
 
 			if (Settings is not HandsomeTweaksSettings settings) {
 				_logger.Error("Settings instance is missing!");
-			} else {
-				setting.AssignSettingValue(settings);
+				return;
 			}
+
+			setting.AssignSettingValue(settings);
+		};
+
+		_configLib.ConfigsLoaded += () => {
+			if (Settings is not HandsomeTweaksSettings settings) {
+				_logger.Error("Settings instance is missing!");
+				return;
+			}
+
+			_configLib.GetConfig(MOD_ID)?.AssignSettingsValues(Settings);
 		};
 	}
 }

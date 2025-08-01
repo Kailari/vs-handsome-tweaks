@@ -1,0 +1,19 @@
+{
+    "version": 1,
+    "file": "jakojaannos/handsometweaks.json",
+    "patches": { },
+    "settings": [
+        {
+            "type": "separator",
+            "title": "Startup Settings",
+            "ingui": "handsometweaks:Settings/Startup/title"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:Settings/Startup/IsMergeStacksOnGroundEnabled/label",
+            "code": "Startup/IsMergeStacksOnGroundEnabled",
+            "default": true,
+            "comment": "handsometweaks:Settings/Startup/IsMergeStacksOnGroundEnabled/comment"
+        }
+    ]
+}

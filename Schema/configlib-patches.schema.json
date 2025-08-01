@@ -1,0 +1,161 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "configlib-patches.schema.json",
+	"title": "ConfigLib Patches",
+	"description": "Set of settings, patches that change values in assets and the formatting of the configuration file.",
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"version": {
+			"description": "The version of the configuration file. Incrementing version regenerates config files with default values.",
+			"type": "integer"
+		},
+
+		"file": {
+			"description": "Existing ModConfig file the ConfigLib should use instead of generating a YAML file.",
+			"type": "string"
+		},
+
+		"settings": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"comment": {
+						"description": "The comment shown on the tooltip in game and as a comment hint in the config file. Can be a translation key.",
+						"type": "string"
+					},
+					"default": {
+						"description": "The default value of this setting. Additionally, used when generating a fresh config file."
+					},
+					"ingui": {
+						"description": "The translation key for the setting or the title of this separator. Defaults to the value of 'code' (for JSON settings) or 'name' (for YAML settings) if not provided.",
+						"type": "string"
+					},
+					"type": {
+						"description": "The datatype of the setting.",
+						"enum": [ "separator", "boolean", "float", "integer", "string", "other" ]
+					},
+					"weight": {
+						"description": "Sorting weight of the setting for ordering the settings in the UI. Should be greater than zero.",
+						"type": "float",
+						"minimum": 0
+					},
+					"code": true,
+					"name": true,
+					"title": true
+				},
+				"required": [ "type" ],
+				"additionalProperties": false,
+				"oneOf": [
+					{
+						"properties": {
+							"type": { "const": "separator" },
+							"title": {
+								"description": "The title on the separator",
+								"type": "string"
+							},
+							"default": false
+						}
+					},
+					{
+						"properties": {
+							"code": true,
+							"comment": true,
+							"default": true,
+							"ingui": true,
+							"name": true,
+							"type": true
+						},
+						"required": [ "default" ],
+						"additionalProperties": false,
+						"oneOf": [
+							{
+								"properties": {
+									"code": {
+										"description": "The name/path of the setting in the JSON file.",
+										"type": "string"
+									},
+									"comment": true,
+									"default": true,
+									"name": false,
+									"ingui": true,
+									"type": true
+								},
+								"required": [ "code" ],
+								"additionalProperties": false,
+								"oneOf": [
+									{ "$ref": "#/$defs/value_settings/boolean" },
+									{ "$ref": "#/$defs/value_settings/float" },
+									{ "$ref": "#/$defs/value_settings/integer" },
+									{ "$ref": "#/$defs/value_settings/string" },
+									{ "$ref": "#/$defs/value_settings/other" }
+								]
+							},
+							{
+								"properties": {
+									"code": false,
+									"comment": true,
+									"default": true,
+									"name": {
+										"description": "The name of the setting in the YAML file.",
+										"type": "string"
+									},
+									"type": true
+								},
+								"required": [ "name" ],
+								"additionalProperties": false,
+								"oneOf": [
+									{ "$ref": "#/$defs/value_settings/boolean" },
+									{ "$ref": "#/$defs/value_settings/float" },
+									{ "$ref": "#/$defs/value_settings/integer" },
+									{ "$ref": "#/$defs/value_settings/string" },
+									{ "$ref": "#/$defs/value_settings/other" }
+								]
+							}
+						]
+					}
+				]
+			}
+		},
+		"patches": { }
+	},
+
+	"required": [
+		"version"
+	],
+
+	"$defs": {
+		"value_settings": {
+			"boolean": {
+				"properties": {
+					"type": { "const": "boolean" },
+					"default": { "type": "boolean" }
+				}
+			},
+			"float": {
+				"properties": {
+					"type": { "const": "float" },
+					"default": { "type": "float" }
+				}
+			},
+			"integer": {
+				"properties": {
+					"type": { "const": "integer" },
+					"default": { "type": "integer" }
+				}
+			},
+			"string": {
+				"properties": {
+					"type": { "const": "string" },
+					"default": { "type": "string" }
+				}
+			},
+			"other": {
+				"properties": {
+					"type": { "const": "other" }
+				}
+			}
+		}
+	}
+}

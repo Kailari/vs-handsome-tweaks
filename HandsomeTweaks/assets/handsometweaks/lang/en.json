@@ -1,0 +1,11 @@
+{
+    "Settings": {
+        "Startup": {
+            "title": "Startup settings",
+            "IsMergeStacksOnGroundEnabled": {
+                "label": "Enable Module: Merge Stacks on Ground",
+                "comment": "Reduces lag by merging stacks on ground to larger clumps. Requires restart."
+            }
+        }
+    }
+}

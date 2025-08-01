@@ -1,0 +1,10 @@
+{
+	"json.schemas": [
+		{
+			"fileMatch": [
+				"**/configlib-patches.json"
+			],
+			"url": "/Schema/configlib-patches.schema.json"
+		}
+	]
+}
