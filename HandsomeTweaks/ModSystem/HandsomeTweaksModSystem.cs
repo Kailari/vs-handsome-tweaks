@@ -11,6 +11,7 @@ using static Jakojaannos.HandsomeTweaks.ModInfo;
 using VSModSystem = Vintagestory.API.Common.ModSystem;
 using MergeStacksOnGround = Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.ModuleInfo;
 using StructuredLangFile = Jakojaannos.HandsomeTweaks.Modules.StructuredLangFile.ModuleInfo;
+using KeepHandbookHistory = Jakojaannos.HandsomeTweaks.Modules.KeepHandbookHistory.ModuleInfo;
 using Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
 
 
@@ -62,6 +63,10 @@ public class HandsomeTweaksModSystem : VSModSystem {
 			if (Settings.MergeStacksOnGround.IsRenderPatchEnabled) {
 				_harmony.PatchCategory(MergeStacksOnGround.PATCH_CATEGORY + EntityItemRendererPatch.RENDER_PATCH);
 			}
+		}
+
+		if (Settings.Startup.IsKeepHandbookHistoryEnabled) {
+			_harmony.PatchCategory(KeepHandbookHistory.PATCH_CATEGORY);
 		}
 	}
 

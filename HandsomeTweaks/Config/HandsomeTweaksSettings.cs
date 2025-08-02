@@ -9,15 +9,22 @@ internal sealed class HandsomeTweaksSettings {
 
 	public readonly StartupSettings Startup = new();
 	public readonly MergeStacksOnGroundSettings MergeStacksOnGround = new();
+	public readonly KeepHandbookHistorySettings KeepHandbookHistory = new();
 
 	internal sealed class StartupSettings {
 		public bool IsMergeStacksOnGroundEnabled { get; set; } = true;
+		public bool IsKeepHandbookHistoryEnabled { get; set; } = true;
 		public bool IsStructuredTranslationEnabled { get; set; } = true;
 	}
 
 	internal sealed class MergeStacksOnGroundSettings {
 		public bool IsRenderPatchEnabled { get; set; } = true;
 		public int MaxRenderedStacks { get; set; } = 10;
+	}
+
+	internal sealed class KeepHandbookHistorySettings {
+		public bool IsHistoryPersistent { get; set; } = true;
+		public int HistoryMaxSize { get; set; } = 50;
 	}
 
 	internal static HandsomeTweaksSettings Instance { get; set; } = new();

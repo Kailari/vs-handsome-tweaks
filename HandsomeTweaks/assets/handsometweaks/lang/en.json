@@ -6,6 +6,10 @@
                 "label": "Enable Module: Merge Stacks on Ground",
                 "comment": "Reduces lag by merging stacks on ground to larger clumps. Requires restart."
             },
+            "keephandbookhistoryenabled": {
+                "label": "Enable Module: Keep Handbook History",
+                "comment": "Adds support for retaining handbook history when closing the GUI. Requires restart."
+            },
             "structuredtranslationenabled": {
                 "label": "Enable Module: Structured Translation Strings Patch",
                 "comment": "Adds supports structured lang files. Does invasive patching of TranslationService, disable this only if something breaks. NOTE: Disabling this breaks translation strings of this mod."
@@ -20,6 +24,17 @@
             "maxrenderedstacks": {
                 "label": "Max rendered stacks",
                 "comment": "Maximum number of stacks rendered when stacks are merged."
+            }
+        },
+        "keephandbookhistory": {
+            "title": "Keep Handbook History - Settings",
+            "keepbrowsehistory": {
+                "label": "Keep browse history",
+                "comment": "Keeps browse history when reopening the handbook."
+            },
+            "historymaxsize": {
+                "label": "Max history size",
+                "comment": "How many pages can be kept in the history"
             }
         }
     }

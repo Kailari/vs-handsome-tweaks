@@ -58,6 +58,7 @@
 								"type": "string"
 							},
 							"default": false,
+							"ingui": false,
 							"range": false,
 							"values": false
 						}

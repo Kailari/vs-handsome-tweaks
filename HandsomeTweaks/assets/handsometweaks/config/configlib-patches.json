@@ -5,27 +5,7 @@
     "settings": [
         {
             "type": "separator",
-            "title": "Startup Settings",
-            "ingui": "handsometweaks:settings-startup-title"
-        },
-        {
-            "type": "boolean",
-            "ingui": "handsometweaks:settings-startup-mergestacksongroundenabled-label",
-            "code": "Startup/IsMergeStacksOnGroundEnabled",
-            "default": true,
-            "comment": "handsometweaks:settings-startup-mergestacksongroundenabled-comment"
-        },
-        {
-            "type": "boolean",
-            "ingui": "handsometweaks:settings-startup-structuredtranslationenabled-label",
-            "code": "Startup/IsStructuredTranslationEnabled",
-            "default": true,
-            "comment": "handsometweaks:settings-startup-structuredtranslationenabled-comment"
-        },
-        {
-            "type": "separator",
-            "title": "Merge Stacks on Ground",
-            "ingui": "handsometweaks:settings-mergestacksonground-title"
+            "title": "handsometweaks:settings-mergestacksonground-title"
         },
         {
             "type": "boolean",
@@ -44,6 +24,55 @@
                 "min": 1,
                 "max": 10
             }
+        },
+
+        {
+            "type": "separator",
+            "title": "handsometweaks:settings-keephandbookhistory-title"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-keephandbookhistory-keepbrowsehistory-label",
+            "code": "KeepHandbookHistory/IsHistoryPersistent",
+            "default": true,
+            "comment": "handsometweaks:settings-keephandbookhistory-keepbrowsehistory-comment"
+        },
+        {
+            "type": "integer",
+            "ingui": "handsometweaks:settings-keephandbookhistory-historymaxsize-label",
+            "code": "KeepHandbookHistory/HistoryMaxSize",
+            "default": 50,
+            "comment": "handsometweaks:settings-keephandbookhistory-historymaxsize-comment",
+            "range": {
+                "min": 1,
+                "max": 100
+            }
+        },
+
+        {
+            "type": "separator",
+            "title": "handsometweaks:settings-startup-title"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-mergestacksongroundenabled-label",
+            "code": "Startup/IsMergeStacksOnGroundEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-mergestacksongroundenabled-comment"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-keephandbookhistoryenabled-label",
+            "code": "Startup/IsKeepHandbookHistoryEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-keephandbookhistoryenabled-comment"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-structuredtranslationenabled-label",
+            "code": "Startup/IsStructuredTranslationEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-structuredtranslationenabled-comment"
         }
     ]
 }
