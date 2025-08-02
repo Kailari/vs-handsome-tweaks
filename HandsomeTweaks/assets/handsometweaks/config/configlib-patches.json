@@ -6,14 +6,44 @@
         {
             "type": "separator",
             "title": "Startup Settings",
-            "ingui": "handsometweaks:Settings/Startup/title"
+            "ingui": "handsometweaks:settings-startup-title"
         },
         {
             "type": "boolean",
-            "ingui": "handsometweaks:Settings/Startup/IsMergeStacksOnGroundEnabled/label",
+            "ingui": "handsometweaks:settings-startup-mergestacksongroundenabled-label",
             "code": "Startup/IsMergeStacksOnGroundEnabled",
             "default": true,
-            "comment": "handsometweaks:Settings/Startup/IsMergeStacksOnGroundEnabled/comment"
+            "comment": "handsometweaks:settings-startup-mergestacksongroundenabled-comment"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-structuredtranslationenabled-label",
+            "code": "Startup/IsStructuredTranslationEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-structuredtranslationenabled-comment"
+        },
+        {
+            "type": "separator",
+            "title": "Merge Stacks on Ground",
+            "ingui": "handsometweaks:settings-mergestacksonground-title"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-mergestacksonground-renderpatchenabled-label",
+            "code": "MergeStacksOnGround/IsRenderPatchEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-mergestacksonground-renderpatchenabled-comment"
+        },
+        {
+            "type": "integer",
+            "ingui": "handsometweaks:settings-mergestacksonground-maxrenderedstacks-label",
+            "code": "MergeStacksOnGround/MaxRenderedStacks",
+            "default": 10,
+            "comment": "handsometweaks:settings-mergestacksonground-maxrenderedstacks-comment",
+            "range": {
+                "min": 1,
+                "max": 10
+            }
         }
     ]
 }

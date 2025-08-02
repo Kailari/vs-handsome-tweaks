@@ -5,7 +5,6 @@ using System.Text.RegularExpressions;
 
 using HarmonyLib;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 using Vintagestory.API.Common;
@@ -18,6 +17,11 @@ namespace Jakojaannos.HandsomeTweaks.Modules.StructuredLangFile.Patches;
 [HarmonyPatchCategory(PATCH_CATEGORY)]
 [HarmonyPatch(typeof(TranslationService))]
 public static class TranslationServicePatch {
+	private static readonly JsonLoadSettings JSON_LOAD_SETTINGS = new() {
+		CommentHandling = CommentHandling.Ignore,
+		DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error,
+	};
+
 	// FIXME: this could be easier implemented as a transpiler
 	[HarmonyPrefix]
 	[HarmonyPatch(nameof(TranslationService.Load))]
@@ -68,7 +72,7 @@ public static class TranslationServicePatch {
 				var json = asset.ToText();
 
 				/* === MODIFIED CODE STARTS === */
-				LoadEntries(__instance, logger, entryCache, regexCache, wildcardCache, JObject.Parse(json), asset.Location.Domain);
+				LoadEntries(__instance, logger, entryCache, regexCache, wildcardCache, JToken.Parse(json), asset.Location.Domain);
 				/* === MODIFIED CODE ENDS === */
 			} catch (Exception ex) {
 				logger.Error($"Failed to load language file: {asset.Name}");
@@ -88,16 +92,19 @@ public static class TranslationServicePatch {
 		Dictionary<string, KeyValuePair<Regex, string>> regexCache,
 		Dictionary<string, string> wildcardCache,
 		JToken json,
-		string domain = GlobalConstants.DefaultDomain
+		string domain = GlobalConstants.DefaultDomain,
+		string key = ""
 	) {
 		switch (json) {
 			case JObject jsonObject:
 				foreach (var property in jsonObject.Properties()) {
-					LoadEntries(__instance, logger, entryCache, regexCache, wildcardCache, property.Value, domain);
+					var newKey = key.Length == 0
+						? property.Name
+						: $"{key}-{property.Name}";
+					LoadEntries(__instance, logger, entryCache, regexCache, wildcardCache, property.Value, domain, newKey);
 				}
 				break;
-			case JValue jsonValue when jsonValue.Type == JTokenType.String:
-				var key = jsonValue.Path.Replace('.', '/');
+			case JValue jsonValue when jsonValue.Type == JTokenType.String && key.Length > 0:
 				var value = jsonValue.ToString();
 				if (domain != "game") {
 					logger.Debug($"Loading translation entry: Domain={domain}, Key={key}, Value={value}");

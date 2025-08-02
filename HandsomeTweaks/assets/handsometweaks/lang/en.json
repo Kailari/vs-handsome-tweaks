@@ -1,10 +1,25 @@
 {
-    "Settings": {
-        "Startup": {
+    "settings": {
+        "startup": {
             "title": "Startup settings",
-            "IsMergeStacksOnGroundEnabled": {
+            "mergestacksongroundenabled": {
                 "label": "Enable Module: Merge Stacks on Ground",
                 "comment": "Reduces lag by merging stacks on ground to larger clumps. Requires restart."
+            },
+            "structuredtranslationenabled": {
+                "label": "Enable Module: Structured Translation Strings Patch",
+                "comment": "Adds supports structured lang files. Does invasive patching of TranslationService, disable this only if something breaks. NOTE: Disabling this breaks translation strings of this mod."
+            }
+        },
+        "mergestacksonground": {
+            "title": "Merge Stacks on Ground - Settings",
+            "renderpatchenabled": {
+                "label": "Custom rendering for merged stacks",
+                "comment": "Renders the merged stacks as multiple copies. Requires restart."
+            },
+            "maxrenderedstacks": {
+                "label": "Max rendered stacks",
+                "comment": "Maximum number of stacks rendered when stacks are merged."
             }
         }
     }

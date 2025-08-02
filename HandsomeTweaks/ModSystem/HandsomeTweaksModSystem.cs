@@ -11,12 +11,15 @@ using static Jakojaannos.HandsomeTweaks.ModInfo;
 using VSModSystem = Vintagestory.API.Common.ModSystem;
 using MergeStacksOnGround = Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.ModuleInfo;
 using StructuredLangFile = Jakojaannos.HandsomeTweaks.Modules.StructuredLangFile.ModuleInfo;
+using Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
 
 
 namespace Jakojaannos.HandsomeTweaks.ModSystem;
 
 public class HandsomeTweaksModSystem : VSModSystem {
-	private HandsomeTweaksSettings _settings = new();
+	private static HandsomeTweaksSettings Settings {
+		get => HandsomeTweaksSettings.Instance;
+	}
 
 	private ConfigLibCompat? _configLib;
 	private Harmony? _harmony;
@@ -29,38 +32,37 @@ public class HandsomeTweaksModSystem : VSModSystem {
 	public override void Start(ICoreAPI api) {
 		Mod.Logger.Debug("Handsome Tweaks Starting!");
 
-		HandsomeTweaksSettings.SyncWithModConfig(api, ref _settings);
+		HandsomeTweaksSettings.SyncWithModConfig(api);
 
-		_configLib = ConfigLibCompat.TryInitialize(Mod, api);
-		if (_configLib is not null) {
-			_configLib.Settings = _settings;
-		}
+		_configLib = ConfigLibCompat.TryInitialize(api);
+		_configLib?.SubscribeToConfigChange();
 
-		// Don't re-apply patches if they have already been applied
-		if (_harmony is null && !s_isPatchApplied) {
-			Mod.Logger.Debug("Applying patches!");
-			s_isPatchApplied = true;
-			_didPatch = true;
-
-			_harmony = new(MOD_ID);
-			_harmony.PatchCategory(StructuredLangFile.PATCH_CATEGORY);
-
-			if (_settings.Startup.IsMergeStacksOnGroundEnabled) {
-				_harmony.PatchCategory(MergeStacksOnGround.PATCH_CATEGORY);
-			}
-		} else {
-			Mod.Logger.Debug("Patches already applied - OK!");
-		}
+		ApplyPatches();
 	}
 
-	public override void AssetsFinalize(ICoreAPI api) {
-		/*
-		_settings = HandsomeTweaksSettings.FromAsset(api.Assets);
-
-		if (_configLib is ConfigLibCompat configLib) {
-			configLib.Settings = _settings;
+	private void ApplyPatches() {
+		// Don't re-apply patches if they have already been applied
+		if (_harmony is not null || s_isPatchApplied) {
+			Mod.Logger.Debug("Patches already applied - OK!");
+			return;
 		}
-		*/
+
+		Mod.Logger.Debug("Applying patches!");
+		s_isPatchApplied = true;
+		_didPatch = true;
+
+		_harmony = new(MOD_ID);
+		if (Settings.Startup.IsStructuredTranslationEnabled) {
+			_harmony.PatchCategory(StructuredLangFile.PATCH_CATEGORY);
+		}
+
+		if (Settings.Startup.IsMergeStacksOnGroundEnabled) {
+			_harmony.PatchCategory(MergeStacksOnGround.PATCH_CATEGORY);
+
+			if (Settings.MergeStacksOnGround.IsRenderPatchEnabled) {
+				_harmony.PatchCategory(MergeStacksOnGround.PATCH_CATEGORY + EntityItemRendererPatch.RENDER_PATCH);
+			}
+		}
 	}
 
 	public override void Dispose() {

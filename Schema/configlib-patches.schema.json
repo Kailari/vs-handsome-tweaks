@@ -43,7 +43,9 @@
 					},
 					"code": true,
 					"name": true,
-					"title": true
+					"range": true,
+					"title": true,
+					"values": true
 				},
 				"required": [ "type" ],
 				"additionalProperties": false,
@@ -55,7 +57,9 @@
 								"description": "The title on the separator",
 								"type": "string"
 							},
-							"default": false
+							"default": false,
+							"range": false,
+							"values": false
 						}
 					},
 					{
@@ -65,7 +69,12 @@
 							"default": true,
 							"ingui": true,
 							"name": true,
-							"type": true
+							"range": true,
+							"type": true,
+							"values": {
+								"description": "Allowed values for this setting.",
+								"type": "array"
+							}
 						},
 						"required": [ "default" ],
 						"additionalProperties": false,
@@ -78,9 +87,11 @@
 									},
 									"comment": true,
 									"default": true,
-									"name": false,
 									"ingui": true,
-									"type": true
+									"name": false,
+									"range": true,
+									"type": true,
+									"values": true
 								},
 								"required": [ "code" ],
 								"additionalProperties": false,
@@ -97,11 +108,14 @@
 									"code": false,
 									"comment": true,
 									"default": true,
+									"ingui": true,
 									"name": {
 										"description": "The name of the setting in the YAML file.",
 										"type": "string"
 									},
-									"type": true
+									"range": true,
+									"type": true,
+									"values": true
 								},
 								"required": [ "name" ],
 								"additionalProperties": false,
@@ -130,30 +144,49 @@
 			"boolean": {
 				"properties": {
 					"type": { "const": "boolean" },
-					"default": { "type": "boolean" }
+					"default": { "type": "boolean" },
+					"range": false,
+					"values": false
 				}
 			},
 			"float": {
 				"properties": {
 					"type": { "const": "float" },
-					"default": { "type": "float" }
+					"default": { "type": "float" },
+					"range": {
+						"properties": {
+							"min": { "type": "float" },
+							"max": { "type": "float" }
+						}
+					},
+					"values": { "items": { "type": "float" } }
 				}
 			},
 			"integer": {
 				"properties": {
 					"type": { "const": "integer" },
-					"default": { "type": "integer" }
+					"default": { "type": "integer" },
+					"range": {
+						"properties": {
+							"min": { "type": "integer" },
+							"max": { "type": "integer" }
+						}
+					},
+					"values": { "items": { "type": "integer" } }
 				}
 			},
 			"string": {
 				"properties": {
 					"type": { "const": "string" },
-					"default": { "type": "string" }
+					"default": { "type": "string" },
+					"range": false,
+					"values": false
 				}
 			},
 			"other": {
 				"properties": {
-					"type": { "const": "other" }
+					"type": { "const": "other" },
+					"range": false
 				}
 			}
 		}
