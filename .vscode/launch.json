@@ -8,12 +8,12 @@
             "name": "Launch Client (Debug)",
             "type": "coreclr",
             "request": "launch",
-            "program": "${env:VINTAGE_STORY}/Vintagestory.exe",
+            "program": "${env:VINTAGE_STORY}/1.20.x/Vintagestory.exe",
             "linux": {
-                "program": "${env:VINTAGE_STORY}/Vintagestory"
+                "program": "${env:VINTAGE_STORY}/1.20.x/Vintagestory"
             },
             "osx": {
-                "program": "${env:VINTAGE_STORY}/Vintagestory"
+                "program": "${env:VINTAGE_STORY}/1.20.x/Vintagestory"
             },
             "preLaunchTask": "build",
             "args": [
@@ -42,12 +42,12 @@
             "name": "Launch Server",
             "type": "coreclr",
             "request": "launch",
-            "program": "${env:VINTAGE_STORY}/VintagestoryServer.exe",
+            "program": "${env:VINTAGE_STORY}/1.20.x/VintagestoryServer.exe",
             "linux": {
-                "program": "${env:VINTAGE_STORY}/VintagestoryServer"
+                "program": "${env:VINTAGE_STORY}/1.20.x/VintagestoryServer"
             },
             "osx": {
-                "program": "${env:VINTAGE_STORY}/VintagestoryServer"
+                "program": "${env:VINTAGE_STORY}/1.20.x/VintagestoryServer"
             },
             "preLaunchTask": "build",
             "args": [
@@ -68,7 +68,7 @@
             "request": "launch",
             "preLaunchTask": "build (Cake)",
             "program": "${workspaceFolder}/CakeBuild/bin/Debug/net7.0/CakeBuild.dll",
-            "args": [],
+            "args": [ ],
             "cwd": "${workspaceFolder}/CakeBuild",
             "stopAtEntry": false,
             "console": "internalConsole"

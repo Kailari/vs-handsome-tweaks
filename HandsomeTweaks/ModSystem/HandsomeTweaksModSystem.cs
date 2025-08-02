@@ -35,7 +35,7 @@ public class HandsomeTweaksModSystem : VSModSystem {
 
 		HandsomeTweaksSettings.SyncWithModConfig(api);
 
-		_configLib = ConfigLibCompat.TryInitialize(api);
+		_configLib = ConfigLibCompat.TryInitialize(Mod.Logger, api);
 		_configLib?.SubscribeToConfigChange();
 
 		ApplyPatches();

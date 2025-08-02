@@ -24,7 +24,7 @@ public static class EntityItemRendererPatch {
 
 	internal static readonly string ATTRIBUTE_RENDER_STACK_COUNT = Attributes.Id(MODULE_ID, "stacks");
 
-	private static readonly Vec3f[] OFFSETS = [
+	private static readonly Vec3f[] OFFSETS = new Vec3f[11] {
 		new(0.0f, 0.0f, 0.0f),
 		new(-0.37f, 0.03f, 0.37f),
 		new(-0.34f, 0.06f, -0.34f),
@@ -36,7 +36,7 @@ public static class EntityItemRendererPatch {
 		new(0.16f, 0.24f, 0.16f),
 		new(-0.13f, 0.27f, -0.13f),
 		new(0.1f, 0.3f, -0.1f),
-	];
+	};
 
 
 	[HarmonyTranspiler]
