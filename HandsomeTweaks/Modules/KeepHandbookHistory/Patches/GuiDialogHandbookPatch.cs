@@ -1,5 +1,3 @@
-#pragma warning disable IDE0060
-
 using System;
 using System.Collections.Generic;
 using System.Reflection.Emit;
@@ -58,9 +56,7 @@ public static class GuiDialogHandbookPatch {
 	[HarmonyPostfix]
 	[HarmonyPatch(nameof(GuiDialogHandbook.OnGuiClosed))]
 	public static void OnGuiClosedPostfix(
-		GuiDialogHandbook __instance,
 		ref Stack<BrowseHistoryElement> ___browseHistory,
-		ref GuiComposer ___overviewGui,
 		ref GuiState? __state
 	) {
 		if (!Settings.IsHistoryPersistent) {
