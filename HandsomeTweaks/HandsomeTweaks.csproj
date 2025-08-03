@@ -28,6 +28,10 @@
 			<HintPath>$(VINTAGE_STORY)/1.20.x/Lib/0Harmony.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
+		<Reference Include="cairo-sharp">
+			<HintPath>$(VINTAGE_STORY)/1.20.x/Lib/cairo-sharp.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
 		<Reference Include="Newtonsoft.Json">
 			<HintPath>$(VINTAGE_STORY)/1.20.x/Lib/Newtonsoft.Json.dll</HintPath>
 			<Private>False</Private>
@@ -36,8 +40,15 @@
 
 	<!-- Additional dependencies -->
 	<ItemGroup>
+		<!-- For mod configs -->
 		<Reference Include="ConfigLib">
 			<HintPath>$(VINTAGE_STORY_DEV_MODS)/1.20.x/configlib/configlib.dll</HintPath>
+			<Private>False</Private>
+		</Reference>
+
+		<!-- For level up notification -->
+		<Reference Include="XLib">
+			<HintPath>$(VINTAGE_STORY_DEV_MODS)/1.20.x/xlib/xlib.dll</HintPath>
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>

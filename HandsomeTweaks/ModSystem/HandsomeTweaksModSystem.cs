@@ -3,8 +3,8 @@ using HarmonyLib;
 using Vintagestory.API.Common;
 
 using Jakojaannos.HandsomeTweaks.Compatibility.ConfigLib;
-
 using Jakojaannos.HandsomeTweaks.Config;
+using Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
 
 using static Jakojaannos.HandsomeTweaks.ModInfo;
 
@@ -12,7 +12,9 @@ using VSModSystem = Vintagestory.API.Common.ModSystem;
 using MergeStacksOnGround = Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.ModuleInfo;
 using StructuredLangFile = Jakojaannos.HandsomeTweaks.Modules.StructuredLangFile.ModuleInfo;
 using KeepHandbookHistory = Jakojaannos.HandsomeTweaks.Modules.KeepHandbookHistory.ModuleInfo;
-using Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
+using XLibLevelUpNotification = Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.ModuleInfo;
+using Vintagestory.API.Client;
+using Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.Client.Gui;
 
 
 namespace Jakojaannos.HandsomeTweaks.ModSystem;
@@ -41,6 +43,10 @@ public class HandsomeTweaksModSystem : VSModSystem {
 		ApplyPatches();
 	}
 
+	public override void StartClientSide(ICoreClientAPI api) {
+		var _ = new HudLevelUp(api);
+	}
+
 	private void ApplyPatches() {
 		// Don't re-apply patches if they have already been applied
 		if (_harmony is not null || s_isPatchApplied) {
@@ -67,6 +73,10 @@ public class HandsomeTweaksModSystem : VSModSystem {
 
 		if (Settings.Startup.IsKeepHandbookHistoryEnabled) {
 			_harmony.PatchCategory(KeepHandbookHistory.PATCH_CATEGORY);
+		}
+
+		if (Settings.Startup.IsXLibLevelUpNotificationEnabled) {
+			_harmony.PatchCategory(XLibLevelUpNotification.PATCH_CATEGORY);
 		}
 	}
 

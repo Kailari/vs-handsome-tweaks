@@ -96,9 +96,9 @@ public static class EntityItemRendererPatch {
 		var maxRenderedStacks = Math.Clamp(settings.MergeStacksOnGround.MaxRenderedStacks + 1, 1, OFFSETS.Length);
 
 		var maxStackSize = entityitem.Itemstack.Collectible.MaxStackSize;
-		var itemsPerRenderedStackSizeTier = maxStackSize / maxRenderedStacks;
+		var itemsPerRenderedStackSizeTier = maxStackSize / (float)maxRenderedStacks;
 		var itemsInMergedStack = entityitem.WatchedAttributes.GetInt(ATTRIBUTE_RENDER_STACK_COUNT, 0);
-		var stackCount = itemsInMergedStack / itemsPerRenderedStackSizeTier;
+		var stackCount = itemsInMergedStack / Math.Max(1, itemsPerRenderedStackSizeTier);
 		var renderInstanceCount = Math.Clamp(stackCount, 1, maxRenderedStacks);
 		if (isShadowPass) {
 			renderInstanceCount = 1;

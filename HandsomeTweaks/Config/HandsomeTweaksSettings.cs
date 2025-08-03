@@ -15,6 +15,7 @@ internal sealed class HandsomeTweaksSettings {
 		public bool IsMergeStacksOnGroundEnabled { get; set; } = true;
 		public bool IsKeepHandbookHistoryEnabled { get; set; } = true;
 		public bool IsStructuredTranslationEnabled { get; set; } = true;
+		public bool IsXLibLevelUpNotificationEnabled { get; set; } = true;
 	}
 
 	internal sealed class MergeStacksOnGroundSettings {
