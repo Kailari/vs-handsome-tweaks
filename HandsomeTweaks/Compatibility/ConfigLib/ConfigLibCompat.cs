@@ -43,6 +43,7 @@ internal class ConfigLibCompat {
 
 	private readonly struct SettingFieldOrProperty {
 		public required string Name { get; init; }
+		public required Type Type { get; init; }
 		public required bool IsNestedSettings { get; init; }
 		public required Action<object?> Setter { get; init; }
 		public required Func<object?> Getter { get; init; }
@@ -56,6 +57,7 @@ internal class ConfigLibCompat {
 			.Where(field => !field.IsLiteral)
 			.Select(field => new SettingFieldOrProperty() {
 				Name = field.Name,
+				Type = field.FieldType,
 				Setter = (value) => field.SetValue(settings, value),
 				Getter = () => field.GetValue(settings),
 				IsNestedSettings = field.FieldType.Name.EndsWith("Settings")
@@ -65,12 +67,13 @@ internal class ConfigLibCompat {
 			.Where(prop => prop.GetMethod != null && prop.GetMethod.IsPublic)
 			.Select(prop => new SettingFieldOrProperty() {
 				Name = prop.Name,
+				Type = prop.PropertyType,
 				Setter = (value) => prop.SetValue(settings, value),
 				Getter = () => prop.GetValue(settings),
 				IsNestedSettings = prop.PropertyType.Name.EndsWith("Settings")
 			});
 
-		foreach (var field in fields) {
+		foreach (var field in fields.Concat(properties)) {
 			var code = prefix.Length > 0
 				? $"{prefix}/{field.Name}"
 				: field.Name;
@@ -88,12 +91,12 @@ internal class ConfigLibCompat {
 
 			var setting = config.GetSetting(code);
 			if (setting is not null) {
-				object value = setting.SettingType switch {
+				var value = setting.SettingType switch {
 					ConfigSettingType.Boolean => setting.Value.AsBool(),
 					ConfigSettingType.Float => setting.Value.AsFloat(),
 					ConfigSettingType.Integer => setting.Value.AsInt(),
 					ConfigSettingType.String => setting.Value.AsString(),
-					ConfigSettingType.Other => setting.Value.ToAttribute(),
+					ConfigSettingType.Other => ParseOtherSettingValue(setting, field.Type),
 					var t => throw new NotImplementedException($"Unhandled setting type: {t}"),
 				};
 				field.Setter(value ?? setting.DefaultValue);
@@ -101,5 +104,14 @@ internal class ConfigLibCompat {
 				_logger.Warning($"Encountered non-setting public field \"{code}\" on {settingsType.Name}");
 			}
 		}
+	}
+
+	private static object? ParseOtherSettingValue(ISetting setting, Type type) {
+		if (type.IsEnum) {
+			var settingValue = setting.Value.AsInt();
+			return type.GetEnumValues().GetValue(settingValue);
+		}
+
+		return setting.Value.ToAttribute();
 	}
 }

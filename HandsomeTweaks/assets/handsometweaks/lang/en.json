@@ -2,6 +2,7 @@
     "settings": {
         "startup": {
             "title": "Startup settings",
+            "description": "Controls for modifications applied at startup. Mainly options for toggling entire modules on/off.\n\nChanging any of these requires a restart to apply the changes.",
             "mergestacksongroundenabled": {
                 "label": "Enable Module: Merge Stacks on Ground",
                 "comment": "Reduces lag by merging stacks on ground to larger clumps. Requires restart."
@@ -12,11 +13,12 @@
             },
             "structuredtranslationenabled": {
                 "label": "Enable Module: Structured Translation Strings Patch",
-                "comment": "Adds supports structured lang files. Does invasive patching of TranslationService, disable this only if something breaks. NOTE: Disabling this breaks translation strings of this mod."
+                "comment": "Adds supports structured lang files. Does invasive patching of TranslationService, disable this only if something breaks.\n\nNOTE: Disabling this breaks the translation strings from this mod."
             }
         },
         "mergestacksonground": {
             "title": "Merge Stacks on Ground - Settings",
+            "description": "Settings for the Merge Stacks on Ground -module.",
             "renderpatchenabled": {
                 "label": "Custom rendering for merged stacks",
                 "comment": "Renders the merged stacks as multiple copies. Requires restart."
@@ -24,10 +26,15 @@
             "maxrenderedstacks": {
                 "label": "Max rendered stacks",
                 "comment": "Maximum number of stacks rendered when stacks are merged."
+            },
+            "strategy": {
+                "label": "Merge Strategy",
+                "comment": "The strategy for how merging the item stacks is attempted.\n\nWhen set to \"Collision\", each item stack only attempts merging with other stacks once a small delay has passed and after the stack collides with ground for the first time. The check is performed once per stack and is very light on the performance. This should work in 99% of cases.\n\nOn \"Continuous\", all item stacks attempt merging with nearby item stacks every five seconds. This is more expensive, but very reliable. This is the strategy Item Clumps mod uses."
             }
         },
         "keephandbookhistory": {
             "title": "Keep Handbook History - Settings",
+            "description": "Settings for the Keep Handbook History -module.",
             "keepbrowsehistory": {
                 "label": "Keep browse history",
                 "comment": "Keeps browse history when reopening the handbook."

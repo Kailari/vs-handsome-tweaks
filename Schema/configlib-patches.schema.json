@@ -21,60 +21,99 @@
 			"items": {
 				"type": "object",
 				"properties": {
-					"comment": {
-						"description": "The comment shown on the tooltip in game and as a comment hint in the config file. Can be a translation key.",
-						"type": "string"
-					},
-					"default": {
-						"description": "The default value of this setting. Additionally, used when generating a fresh config file."
-					},
-					"ingui": {
-						"description": "The translation key for the setting or the title of this separator. Defaults to the value of 'code' (for JSON settings) or 'name' (for YAML settings) if not provided.",
-						"type": "string"
-					},
-					"type": {
-						"description": "The datatype of the setting.",
-						"enum": [ "separator", "boolean", "float", "integer", "string", "other" ]
-					},
-					"weight": {
-						"description": "Sorting weight of the setting for ordering the settings in the UI. Should be greater than zero.",
-						"type": "float",
-						"minimum": 0
-					},
 					"code": true,
+					"comment": true,
+					"default": true,
+					"ingui": true,
+					"mapping": true,
 					"name": true,
 					"range": true,
+					"text": true,
 					"title": true,
-					"values": true
+					"type": {
+						"description": "The datatype of this setting.",
+						"enum": [ "separator", "boolean", "float", "integer", "string", "other" ]
+					},
+					"values": true,
+					"weight": true
 				},
 				"required": [ "type" ],
 				"additionalProperties": false,
 				"oneOf": [
 					{
 						"properties": {
-							"type": { "const": "separator" },
-							"title": {
-								"description": "The title on the separator",
-								"type": "string"
-							},
+							"code": false,
+							"comment": false,
 							"default": false,
 							"ingui": false,
+							"mapping": false,
+							"name": false,
 							"range": false,
-							"values": false
-						}
+							"text": {
+								"description": "Text section shown on this separator on the GUI or the YAML file.",
+								"type": "string"
+							},
+							"title": {
+								"description": "The title of this separator on the GUI or in the YAML file.",
+								"type": "string"
+							},
+							"type": { "const": "separator" },
+							"values": false,
+							"weight": false
+						},
+						"anyOf": [
+							{ "required": [ "title" ] },
+							{ "required": [ "text" ] }
+						]
 					},
 					{
 						"properties": {
-							"code": true,
-							"comment": true,
-							"default": true,
-							"ingui": true,
-							"name": true,
-							"range": true,
-							"type": true,
+							"code": {
+								"description": "The name/path of the setting in the JSON file."
+							},
+							"comment": {
+								"description": "The comment shown on the tooltip in game and as a comment hint in the config file. Can be a translation key.",
+								"type": "string"
+							},
+							"default": {
+								"description": "The default value of this setting. Additionally, used when generating a fresh config file.\n\nShould be equal to a valid value from either \"values\" or \"mapping\" if either of those is defined."
+							},
+							"ingui": {
+								"description": "The translation key for the setting or the title of this separator. Defaults to the value of 'code' (for JSON settings) or 'name' (for YAML settings) if not provided.",
+								"type": "string"
+							},
+							"mapping": {
+								"description": "Substitute readable name for values.",
+								"type": "object"
+							},
+							"name": {
+								"description": "The name of the setting in the YAML file. The '_' and '-' are the only special characters allowed."
+							},
+							"range": {
+								"description": "Specifies a minimum and/or a maximum value, and optionally slider step. If both minimum and maximum are provided, a slider is shown in the GUI.",
+								"properties": {
+									"min": { "description": "The minimum value." },
+									"max": { "description": "The maximum value." },
+									"step": { "description": "The slider step/increment size." }
+								},
+								"dependentRequired": {
+									"step": [ "min", "max" ]
+								}
+							},
+							"text": false,
+							"title": false,
+							"type": {
+								"description": "The datatype of the setting.",
+								"enum": [ "separator", "boolean", "float", "integer", "string", "other" ]
+							},
 							"values": {
 								"description": "Allowed values for this setting.",
 								"type": "array"
+							},
+							"weight": {
+								"description": "Sorting weight of the setting for ordering the settings in the UI. Should be greater than zero.",
+								"type": "number",
+								"minimum": 0
 							}
 						},
 						"required": [ "default" ],
@@ -82,17 +121,16 @@
 						"oneOf": [
 							{
 								"properties": {
-									"code": {
-										"description": "The name/path of the setting in the JSON file.",
-										"type": "string"
-									},
+									"code": { "type": "string" },
 									"comment": true,
 									"default": true,
 									"ingui": true,
+									"mapping": true,
 									"name": false,
 									"range": true,
 									"type": true,
-									"values": true
+									"values": true,
+									"weight": true
 								},
 								"required": [ "code" ],
 								"additionalProperties": false,
@@ -110,13 +148,12 @@
 									"comment": true,
 									"default": true,
 									"ingui": true,
-									"name": {
-										"description": "The name of the setting in the YAML file.",
-										"type": "string"
-									},
+									"mapping": true,
+									"name": { "type": "string" },
 									"range": true,
 									"type": true,
-									"values": true
+									"values": true,
+									"weight": true
 								},
 								"required": [ "name" ],
 								"additionalProperties": false,
@@ -146,31 +183,36 @@
 				"properties": {
 					"type": { "const": "boolean" },
 					"default": { "type": "boolean" },
+					"mapping": false,
 					"range": false,
 					"values": false
 				}
 			},
 			"float": {
 				"properties": {
-					"type": { "const": "float" },
-					"default": { "type": "float" },
+					"type": { "const": "number" },
+					"default": { "type": "number" },
+					"mapping": { "patternProperties": { ".*": { "type": "number" } } },
 					"range": {
 						"properties": {
-							"min": { "type": "float" },
-							"max": { "type": "float" }
+							"min": { "type": "number" },
+							"max": { "type": "number" },
+							"step": { "type": "number" }
 						}
 					},
-					"values": { "items": { "type": "float" } }
+					"values": { "items": { "type": "number" } }
 				}
 			},
 			"integer": {
 				"properties": {
 					"type": { "const": "integer" },
 					"default": { "type": "integer" },
+					"mapping": { "patternProperties": { ".*": { "type": "integer" } } },
 					"range": {
 						"properties": {
 							"min": { "type": "integer" },
-							"max": { "type": "integer" }
+							"max": { "type": "integer" },
+							"step": { "type": "integer" }
 						}
 					},
 					"values": { "items": { "type": "integer" } }
@@ -180,6 +222,7 @@
 				"properties": {
 					"type": { "const": "string" },
 					"default": { "type": "string" },
+					"mapping": false,
 					"range": false,
 					"values": false
 				}
@@ -187,6 +230,7 @@
 			"other": {
 				"properties": {
 					"type": { "const": "other" },
+					"mapping": true,
 					"range": false
 				}
 			}

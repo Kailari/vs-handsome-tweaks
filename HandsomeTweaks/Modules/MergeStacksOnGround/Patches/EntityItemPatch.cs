@@ -1,33 +1,37 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Emit;
 
 using HarmonyLib;
 
 using Jakojaannos.HandsomeTweaks.Config;
 using Jakojaannos.HandsomeTweaks.Util;
 
-using Vintagestory.API.Client;
 using Vintagestory.API.Common;
-using Vintagestory.API.MathTools;
-using Vintagestory.GameContent;
 
 using static Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.ModuleInfo;
+using static Jakojaannos.HandsomeTweaks.Config.HandsomeTweaksSettings.MergeStacksOnGroundSettings;
+using Vintagestory.API.Common.Entities;
 
 namespace Jakojaannos.HandsomeTweaks.Modules.MergeStacksOnGround.Patches;
 
-[HarmonyPatch]
+[HarmonyPatch(typeof(EntityItem))]
 [HarmonyPatchCategory(PATCH_CATEGORY)]
 public static class EntityItemPatch {
 	public const string RENDER_PATCH = "renderpatch";
 
 	internal static readonly string ATTRIBUTE_LISTENER_ID = Attributes.Id(MODULE_ID, "listener");
 
+	private static HandsomeTweaksSettings.MergeStacksOnGroundSettings Settings
+		=> HandsomeTweaksSettings.Instance.MergeStacksOnGround;
+
 	[HarmonyPostfix]
-	[HarmonyPatch(typeof(EntityItem), nameof(EntityItem.Initialize))]
+	[HarmonyPatch(nameof(EntityItem.Initialize))]
 	public static void Initialize(EntityItem __instance) {
 		if (__instance.Api.Side == EnumAppSide.Client) {
+			return;
+		}
+
+		if (Settings.Strategy != MergeStrategy.Continuous) {
 			return;
 		}
 
@@ -36,8 +40,21 @@ public static class EntityItemPatch {
 		__instance.Attributes.SetLong(ATTRIBUTE_LISTENER_ID, listenerId);
 	}
 
+	// NOTE: EntityItem does not override `OnCollided`, so we need to override in base class.
 	[HarmonyPostfix]
-	[HarmonyPatch(typeof(EntityItem), nameof(EntityItem.OnEntityDespawn))]
+	[HarmonyPatch(typeof(Entity), nameof(Entity.OnCollided))]
+	public static void OnCollided(EntityItem __instance) {
+		if (__instance.Api.Side == EnumAppSide.Client) {
+			return;
+		}
+
+		if (Settings.Strategy == MergeStrategy.OnCollidedDelayed) {
+			__instance.Api.Event.TickOnceAfterDelay(_ => __instance.TryMergeWithNearbyStacks(), 2500);
+		}
+	}
+
+	[HarmonyPostfix]
+	[HarmonyPatch(nameof(EntityItem.OnEntityDespawn))]
 	private static void OnEntityDespawn(EntityItem __instance) {
 		if (__instance.Api.Side == EnumAppSide.Client) {
 			return;
@@ -45,25 +62,26 @@ public static class EntityItemPatch {
 
 		if (__instance.Attributes.HasAttribute(ATTRIBUTE_LISTENER_ID)) {
 			var listenerId = __instance.Attributes.GetLong(ATTRIBUTE_LISTENER_ID);
+			__instance.Attributes.RemoveAttribute(ATTRIBUTE_LISTENER_ID);
+
 			__instance.Api.Event.UnregisterGameTickListener(listenerId);
 		}
 	}
 
-	private static void TryMergeWithNearbyStacks(EntityItem item) {
-		var isJustSpawned = !item.Collided;
-		if (item.IsStackEmpty() || isJustSpawned || item.IsStackFull()) {
+	private static void TryMergeWithNearbyStacks(this EntityItem @this) {
+		if (@this.IsStackEmpty() || @this.IsStackFull()) {
 			return;
 		}
 
-		var nearbyItemEntities = item.Api.World.GetEntitiesAround(item.ServerPos.XYZ, 5.0f, 5.0f, entity => entity is EntityItem);
+		var nearbyItemEntities = @this.Api.World.GetEntitiesAround(@this.ServerPos.XYZ, 5.0f, 5.0f, entity => entity is EntityItem);
 		foreach (var other in nearbyItemEntities.Cast<EntityItem>()) {
-			if (other.EntityId == item.EntityId || !other.Collided) {
+			if (other.EntityId == @this.EntityId || !other.Collided) {
 				continue;
 			}
 
-			TryMerge(item, other);
+			TryMerge(@this, other);
 
-			var wasMergedToOther = item.IsStackEmpty() || !item.Alive;
+			var wasMergedToOther = @this.IsStackEmpty() || !@this.Alive;
 			if (wasMergedToOther) {
 				return;
 			}

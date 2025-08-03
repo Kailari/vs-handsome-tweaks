@@ -20,6 +20,12 @@ internal sealed class HandsomeTweaksSettings {
 	internal sealed class MergeStacksOnGroundSettings {
 		public bool IsRenderPatchEnabled { get; set; } = true;
 		public int MaxRenderedStacks { get; set; } = 10;
+		public MergeStrategy Strategy { get; set; } = MergeStrategy.OnCollidedDelayed;
+
+		public enum MergeStrategy {
+			Continuous,
+			OnCollidedDelayed
+		}
 	}
 
 	internal sealed class KeepHandbookHistorySettings {

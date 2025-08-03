@@ -5,7 +5,8 @@
     "settings": [
         {
             "type": "separator",
-            "title": "handsometweaks:settings-mergestacksonground-title"
+            "title": "handsometweaks:settings-mergestacksonground-title",
+            "text": "handsometweaks:settings-mergestacksonground-description"
         },
         {
             "type": "boolean",
@@ -25,10 +26,22 @@
                 "max": 10
             }
         },
+        {
+            "type": "other",
+            "ingui": "handsometweaks:settings-mergestacksonground-strategy-label",
+            "code": "MergeStacksOnGround/Strategy",
+            "default": "Collision",
+            "comment": "handsometweaks:settings-mergestacksonground-strategy-comment",
+            "mapping": {
+                "Continuous": 0,
+                "Collision": 1
+            }
+        },
 
         {
             "type": "separator",
-            "title": "handsometweaks:settings-keephandbookhistory-title"
+            "title": "handsometweaks:settings-keephandbookhistory-title",
+            "text": "handsometweaks:settings-keephandbookhistory-description"
         },
         {
             "type": "boolean",
@@ -51,7 +64,8 @@
 
         {
             "type": "separator",
-            "title": "handsometweaks:settings-startup-title"
+            "title": "handsometweaks:settings-startup-title",
+            "text": "handsometweaks:settings-startup-description"
         },
         {
             "type": "boolean",
