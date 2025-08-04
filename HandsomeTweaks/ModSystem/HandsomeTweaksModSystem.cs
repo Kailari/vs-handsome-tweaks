@@ -44,7 +44,11 @@ public class HandsomeTweaksModSystem : VSModSystem {
 	}
 
 	public override void StartClientSide(ICoreClientAPI api) {
-		var _ = new HudLevelUp(api);
+		api
+			.ChatCommands
+			.Create("jj.debug.levelup")
+			.WithDescription("Show the level up notification")
+			.HandleWith((args) => new HudLevelUp(api, "Sneak", 100).OnDebugLevelUp());
 	}
 
 	private void ApplyPatches() {

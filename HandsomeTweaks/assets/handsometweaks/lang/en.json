@@ -43,6 +43,20 @@
                 "label": "Max history size",
                 "comment": "How many pages can be kept in the history"
             }
+        },
+        "xskills": {
+            "title": "XSkills Tweaks",
+            "description": "Tweaks and 'improvements' to XSKills",
+            "levelupnotification": {
+                "label": "Show level up notification",
+                "description": "More noticeable notification on skill level ups"
+            }
+        }
+    },
+    "xskills": {
+        "level-up": {
+            "label": "{0} increased to {1}",
+            "hint": "Press '{0}' to assign skill points"
         }
     }
 }

@@ -30,10 +30,10 @@ public static class PlayerSkillPatch {
 			return;
 		}
 
-		// TODO: display a nice notification _somehow_
 		var api = __instance.Skill.XLeveling.Api;
 		if (api is ICoreClientAPI capi) {
-			var _ = new HudLevelUp(capi).TryOpen();
+			// FIXME: queue if already open
+			var _ = new HudLevelUp(capi, __instance.Skill, __instance.Level).TryOpen();
 		}
 	}
 }

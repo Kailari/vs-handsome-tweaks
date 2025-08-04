@@ -6,14 +6,18 @@ using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
 
+using XLib.XLeveling;
+
 namespace Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.Client.Gui;
 
 public class HudLevelUp : HudElement {
 
-	const double LETTERS_PER_SECOND = 12.5;
-	const int TICKS_PER_LETTER = 5;
-	const double FADE_DELAY = 3.0;
-	const double FADE_DURATION = 2.75;
+	private const double LETTERS_PER_SECOND = 10;
+	private const double TARGET_FPS = 30;
+	private const double FRAMES_PER_LETTER = TARGET_FPS / LETTERS_PER_SECOND;
+	private const double FADE_DELAY = 3.0;
+	private const double FADE_DURATION = 2.75;
+
 
 	public const string ID = "levelupnotification";
 
@@ -21,21 +25,25 @@ public class HudLevelUp : HudElement {
 	private readonly string _labelText;
 	private long? _tickListener = null;
 
-	public HudLevelUp(ICoreClientAPI capi, string message = "SNEAK INCREASED TO 100") : base(capi) {
-		capi
-			.ChatCommands
-			.Create("jj.debug.levelup")
-			.WithDescription("Show the level up notification")
-			.HandleWith(OnDebugLevelUp);
+	public HudLevelUp(ICoreClientAPI capi, Skill skill, int level)
+		: this(capi, skill.DisplayName, level) {
+	}
 
+	public HudLevelUp(ICoreClientAPI capi, string skill, int level)
+		: this(capi, message: FormatSkillLevelUpMessage(skill, level)) {
+	}
+
+	private static string FormatSkillLevelUpMessage(string skill, int level) {
+		return Lang.Get(Guis.TranslationKey("xskills/level-up/label"), skill, level);
+	}
+
+	public HudLevelUp(ICoreClientAPI capi, string message) : base(capi) {
 		_levelUpSfx = Assets.Path("sounds/level-up");
 		_labelText = message;
 	}
 
-	private TextCommandResult OnDebugLevelUp(TextCommandCallingArgs args) {
-		if (IsOpened()) {
-			TryClose();
-		} else {
+	internal TextCommandResult OnDebugLevelUp() {
+		if (!IsOpened()) {
 			TryOpen();
 		}
 
@@ -87,29 +95,29 @@ public class HudLevelUp : HudElement {
 
 		capi.World.PlaySoundAt(_levelUpSfx, capi.World.Player, randomizePitch: false);
 
-		var ticks = 0;
-		var tickDuration = 1.0 / (LETTERS_PER_SECOND * TICKS_PER_LETTER);
+		var ticks = 0.0;
+		var tickDuration = 1.0 / (LETTERS_PER_SECOND * FRAMES_PER_LETTER);
 		_tickListener = capi.Event.RegisterGameTickListener(_ => {
 			var label = SingleComposer.GetDynamicText("levelup-notification-animation-text");
 			var ghostLabel = SingleComposer.GetDynamicText("levelup-notification-animation-text-ghost");
 
 			ticks++;
-			var letters = ticks / TICKS_PER_LETTER;
-			var end = Math.Clamp(letters, 0, _labelText.Length);
+			var letters = ticks / FRAMES_PER_LETTER;
+			var end = Math.Clamp((int)letters, 0, _labelText.Length);
 			if (end < _labelText.Length && _labelText[end] == ' ') {
-				ticks += TICKS_PER_LETTER;
-				letters = ticks / TICKS_PER_LETTER;
-				end = Math.Clamp(letters, 0, _labelText.Length);
+				ticks += FRAMES_PER_LETTER;
+				letters = ticks / FRAMES_PER_LETTER;
+				end = Math.Clamp((int)letters, 0, _labelText.Length);
 			}
 
-			var overflowTicks = ticks % TICKS_PER_LETTER;
+			var overflowTicks = ticks % FRAMES_PER_LETTER;
 			var ghostEnd = Math.Clamp(end + (overflowTicks > 0 ? 1 : 0), 0, _labelText.Length);
-			var ghostAlpha = overflowTicks / (double)TICKS_PER_LETTER;
+			var ghostAlpha = overflowTicks / FRAMES_PER_LETTER;
 
 			var textPortion = _labelText[..end] ?? "";
 			var ghostTextPortion = _labelText[..ghostEnd] ?? "";
 
-			var totalTicks = _labelText.Length * TICKS_PER_LETTER;
+			var totalTicks = _labelText.Length * FRAMES_PER_LETTER;
 			var overshoot = Math.Max(0, ticks - totalTicks);
 			var inSeconds = overshoot * tickDuration;
 			var adjusted = Math.Max(0.0, inSeconds - FADE_DELAY);
