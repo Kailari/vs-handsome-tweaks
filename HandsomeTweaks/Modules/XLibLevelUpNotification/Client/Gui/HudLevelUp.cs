@@ -12,11 +12,8 @@ using XLib.XLeveling;
 namespace Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.Client.Gui;
 
 public class HudLevelUp : HudElement {
-
-	private const double LETTERS_PER_SECOND = 2;
-	private const double TARGET_FPS = 30;
+	private const double FADE_IN_DURATION = 0.5;
 	private const double FADE_DELAY = 3.0;
-	private const double FADE_IN_DURATION = 2.0;
 	private const double FADE_OUT_DURATION = 2.75;
 
 	/*
@@ -49,17 +46,37 @@ public class HudLevelUp : HudElement {
 	in-betweening), in some contexts.
 	*/
 
-	public class Tween {
-		private readonly Action<float> _setter;
-		private readonly Func<float> _getter;
-		private readonly EvolvingNatFloat _generator;
+	public class PropertyTweener<T> {
+		public required Action<T> Setter { get; init; }
+		public required System.Func<T, T, float, T> Lerp { get; init; }
+		public required float Duration { get; init; }
+		public EnumTransformFunction Transform { get; init; } = EnumTransformFunction.LINEAR;
+		public float Delay { get; init; } = 0.0f;
+
+		public required T From { get; init; }
+		public required T To { get; init; }
+
+		private EvolvingNatFloat? _generator;
+
+		public void Update(float t) {
+			_generator ??= new(Transform, 1.0f / Duration);
+
+			var adjustedTime = Math.Max(0.0f, t - Delay);
+			var d = _generator.nextFloat(0.0f, adjustedTime);
+			var value = Lerp(From, To, d);
+			Setter(value);
+		}
 	}
 
 	public const string ID = "levelupnotification";
 
 	private readonly AssetLocation _levelUpSfx;
 	private readonly string _labelText;
-	private long? _tickListener = null;
+
+	private double _elapsed = 0.0;
+
+	private PropertyTweener<double>? _mainLabelScroll;
+	private PropertyTweener<double>? _mainLabelAlpha;
 
 	public HudLevelUp(ICoreClientAPI capi, Skill skill, int level)
 		: this(capi, skill.DisplayName, level) {
@@ -93,8 +110,6 @@ public class HudLevelUp : HudElement {
 		var labelBounds = ElementBounds.Fixed(0, 0);
 		font.AutoBoxSize(_labelText, labelBounds);
 
-		var ghostBounds = labelBounds.FlatCopy();
-
 		// Position horizontally centered and vertically at 25% from the top of the screen
 		var screenHeight = capi.Gui.WindowBounds.InnerHeight / RuntimeEnv.GUIScale;
 		var offsetY = screenHeight / 4.0f;
@@ -115,44 +130,39 @@ public class HudLevelUp : HudElement {
 			.Compose();
 
 		var label = SingleComposer.GetScrollingText("levelup-notification-animation-text");
-		label.VisibleFactor = 0.0;
-		label.RecomposeText();
+		_mainLabelScroll = new PropertyTweener<double>() {
+			Setter = (value) => label.VisibleFactor = value,
+			Lerp = (x, y, t) => GameMath.Lerp(x, y, t),
+			From = 0.0,
+			To = 1.0,
+			Duration = (float)FADE_IN_DURATION,
+		};
+		_mainLabelAlpha = new PropertyTweener<double>() {
+			Setter = (value) => label.Font.Color[3] = value,
+			Lerp = (x, y, t) => GameMath.Lerp(x, y, t),
+			From = 1.0f,
+			To = 0.0f,
+			Delay = (float)(FADE_IN_DURATION + FADE_DELAY),
+			Duration = (float)FADE_OUT_DURATION,
+		};
+		_mainLabelScroll.Update(0.0f);
 
 		capi.World.PlaySoundAt(_levelUpSfx, capi.World.Player, randomizePitch: false);
-
-		//var mainLabelTween = new Tween();
-
-		var visibleLetterCount = new EvolvingNatFloat(EnumTransformFunction.LINEAR, 1.0f / (float)FADE_IN_DURATION);
-
-		var tickDuration = 1.0 / TARGET_FPS;
-		var elapsed = 0.0;
-		_tickListener = capi.Event.RegisterGameTickListener(deltaTime => {
-			var label = SingleComposer.GetScrollingText("levelup-notification-animation-text");
-			elapsed += deltaTime;
-
-			var d = Math.Min(1.0, elapsed / FADE_IN_DURATION);
-			var letters = _labelText.Length * d;
-			var end = Math.Clamp((int)letters, 0, _labelText.Length);
-
-			var fraction = letters - (int)letters;
-
-			var overshoot = Math.Max(0.0, elapsed - FADE_IN_DURATION);
-			var adjusted = Math.Max(0.0, overshoot - FADE_DELAY);
-			var rescaled = adjusted / FADE_OUT_DURATION;
-			var clamped = Math.Clamp(rescaled, 0.0, 1.0);
-			var alpha = 1.0 - clamped;
-			label.Font.Color[3] = alpha;
-			label.VisibleFactor = d;
-
-			if (alpha < 0.001) {
-				TryClose();
-			}
-		}, (int)Math.Round(tickDuration * 1000));
 	}
 
-	public override void OnGuiClosed() {
-		if (_tickListener is long id) {
-			capi.Event.UnregisterGameTickListener(id);
+	public override void OnBeforeRenderFrame3D(float deltaTime) {
+		base.OnBeforeRenderFrame3D(deltaTime);
+
+		if (IsOpened()) {
+			_elapsed += deltaTime;
+
+			_mainLabelAlpha?.Update((float)_elapsed);
+			_mainLabelScroll?.Update((float)_elapsed);
+
+			var totalDuration = FADE_IN_DURATION + FADE_DELAY + FADE_OUT_DURATION;
+			if (_elapsed > totalDuration) {
+				TryClose();
+			}
 		}
 	}
 
