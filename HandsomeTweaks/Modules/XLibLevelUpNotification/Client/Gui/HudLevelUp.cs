@@ -5,6 +5,7 @@ using Jakojaannos.HandsomeTweaks.Util;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
+using Vintagestory.API.MathTools;
 
 using XLib.XLeveling;
 
@@ -12,12 +13,47 @@ namespace Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.Client.Gui;
 
 public class HudLevelUp : HudElement {
 
-	private const double LETTERS_PER_SECOND = 10;
+	private const double LETTERS_PER_SECOND = 2;
 	private const double TARGET_FPS = 30;
-	private const double FRAMES_PER_LETTER = TARGET_FPS / LETTERS_PER_SECOND;
 	private const double FADE_DELAY = 3.0;
-	private const double FADE_DURATION = 2.75;
+	private const double FADE_IN_DURATION = 2.0;
+	private const double FADE_OUT_DURATION = 2.75;
 
+	/*
+	Animation sequence:
+	  A Scroll main label letters into view
+	  B Fade in the separator graphic
+	  C Fade in the skill-point hint
+	  D Fade out the main label
+	  E Fade out the separator
+	  F Fade out the hint label
+
+	  AAAAA------DDDDDD
+	  ---BBB-------EEEE
+	  ----CCC-------FFF
+
+	As seen on the "graphic", the animation can be split nicely to three
+	distinct sections:
+	  1. fade in
+	  2. pause
+	  3. fade out
+
+	These can be implemented as staggered tweens over a period of time. The A
+	is just animating the number of letters visible on the string.
+
+	B/C should be doable as just fading in alpha. And D, E and F should be just
+	alpha fade out.
+
+	The common denominator: These are all just linear property transitions
+	between two known states over time. That's also called a "tween" (as in
+	in-betweening), in some contexts.
+	*/
+
+	public class Tween {
+		private readonly Action<float> _setter;
+		private readonly Func<float> _getter;
+		private readonly EvolvingNatFloat _generator;
+	}
 
 	public const string ID = "levelupnotification";
 
@@ -54,17 +90,6 @@ public class HudLevelUp : HudElement {
 		var font = CairoFont.WhiteMediumText();
 		font.Orientation = EnumTextOrientation.Left;
 
-		var ghostFont = font.Clone();
-		ghostFont.Color[3] = 0.0;
-
-		var invisibleFont = CairoFont.WhiteMediumText();
-		invisibleFont.Color = new[] { 0.0, 0.0, 0.0, 0.0 };
-
-		var invisibleBounds = ElementBounds.Fixed(0, 0);
-		invisibleFont.AutoBoxSize(_labelText, invisibleBounds);
-		invisibleBounds.WithFixedAlignmentOffset(-10.0, 0.0);
-		invisibleBounds.fixedWidth += 20.0;
-
 		var labelBounds = ElementBounds.Fixed(0, 0);
 		font.AutoBoxSize(_labelText, labelBounds);
 
@@ -78,8 +103,6 @@ public class HudLevelUp : HudElement {
 			.FixedPos(EnumDialogArea.CenterTop, 0.0, 0.0)
 			.WithFixedAlignmentOffset(0.0, offsetY)
 			.WithSizing(ElementSizing.FitToChildren)
-			.WithChild(invisibleBounds)
-			.WithChild(ghostBounds)
 			.WithChild(labelBounds);
 
 		SingleComposer = capi
@@ -87,57 +110,44 @@ public class HudLevelUp : HudElement {
 			.CreateCompo(Guis.Id(ID), panelBounds)
 			.AddContainer(ElementBounds.Fill)
 			.BeginChildElements()
-			.AddStaticText(_labelText, invisibleFont, invisibleBounds)
-			.AddDynamicText("", ghostFont, ghostBounds, "levelup-notification-animation-text-ghost")
-			.AddDynamicText("", font, labelBounds, "levelup-notification-animation-text")
+			.AddScrollingText(_labelText, font, labelBounds, "levelup-notification-animation-text")
 			.EndChildElements()
 			.Compose();
 
+		var label = SingleComposer.GetScrollingText("levelup-notification-animation-text");
+		label.VisibleFactor = 0.0;
+		label.RecomposeText();
+
 		capi.World.PlaySoundAt(_levelUpSfx, capi.World.Player, randomizePitch: false);
 
-		var ticks = 0.0;
-		var tickDuration = 1.0 / (LETTERS_PER_SECOND * FRAMES_PER_LETTER);
-		_tickListener = capi.Event.RegisterGameTickListener(_ => {
-			var label = SingleComposer.GetDynamicText("levelup-notification-animation-text");
-			var ghostLabel = SingleComposer.GetDynamicText("levelup-notification-animation-text-ghost");
+		//var mainLabelTween = new Tween();
 
-			ticks++;
-			var letters = ticks / FRAMES_PER_LETTER;
+		var visibleLetterCount = new EvolvingNatFloat(EnumTransformFunction.LINEAR, 1.0f / (float)FADE_IN_DURATION);
+
+		var tickDuration = 1.0 / TARGET_FPS;
+		var elapsed = 0.0;
+		_tickListener = capi.Event.RegisterGameTickListener(deltaTime => {
+			var label = SingleComposer.GetScrollingText("levelup-notification-animation-text");
+			elapsed += deltaTime;
+
+			var d = Math.Min(1.0, elapsed / FADE_IN_DURATION);
+			var letters = _labelText.Length * d;
 			var end = Math.Clamp((int)letters, 0, _labelText.Length);
-			if (end < _labelText.Length && _labelText[end] == ' ') {
-				ticks += FRAMES_PER_LETTER;
-				letters = ticks / FRAMES_PER_LETTER;
-				end = Math.Clamp((int)letters, 0, _labelText.Length);
-			}
 
-			var overflowTicks = ticks % FRAMES_PER_LETTER;
-			var ghostEnd = Math.Clamp(end + (overflowTicks > 0 ? 1 : 0), 0, _labelText.Length);
-			var ghostAlpha = overflowTicks / FRAMES_PER_LETTER;
+			var fraction = letters - (int)letters;
 
-			var textPortion = _labelText[..end] ?? "";
-			var ghostTextPortion = _labelText[..ghostEnd] ?? "";
-
-			var totalTicks = _labelText.Length * FRAMES_PER_LETTER;
-			var overshoot = Math.Max(0, ticks - totalTicks);
-			var inSeconds = overshoot * tickDuration;
-			var adjusted = Math.Max(0.0, inSeconds - FADE_DELAY);
-			var rescaled = adjusted / FADE_DURATION;
+			var overshoot = Math.Max(0.0, elapsed - FADE_IN_DURATION);
+			var adjusted = Math.Max(0.0, overshoot - FADE_DELAY);
+			var rescaled = adjusted / FADE_OUT_DURATION;
 			var clamped = Math.Clamp(rescaled, 0.0, 1.0);
 			var alpha = 1.0 - clamped;
 			label.Font.Color[3] = alpha;
-			if (overshoot > 0) {
-				ghostLabel.Font.Color[3] = 0.0;
-			} else {
-				ghostLabel.Font.Color[3] = Math.Clamp(ghostAlpha, 0.0, 1.0);
-			}
-
-			ghostLabel.SetNewText(ghostTextPortion, forceRedraw: true);
-			label.SetNewText(textPortion, forceRedraw: true);
+			label.VisibleFactor = d;
 
 			if (alpha < 0.001) {
 				TryClose();
 			}
-		}, (int)(tickDuration * 1000));
+		}, (int)Math.Round(tickDuration * 1000));
 	}
 
 	public override void OnGuiClosed() {
