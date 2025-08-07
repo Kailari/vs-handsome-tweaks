@@ -56,7 +56,7 @@
     "xskills": {
         "level-up": {
             "label": "{0} increased to {1}",
-            "hint": "Press '{0}' to assign skill points"
+            "hint": "Press {0} to assign skill points"
         }
     }
 }
