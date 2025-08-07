@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using Jakojaannos.HandsomeTweaks.Util;
 
@@ -46,7 +47,7 @@ public class HudLevelUp : HudElement {
 	in-betweening), in some contexts.
 	*/
 
-	public class PropertyTweener<T> {
+	public class PropertyTweener<T> : IPropertyTween {
 		public required Action<T> Setter { get; init; }
 		public required System.Func<T, T, float, T> Lerp { get; init; }
 		public required float Duration { get; init; }
@@ -68,15 +69,79 @@ public class HudLevelUp : HudElement {
 		}
 	}
 
+	public interface IPropertyTween {
+		public void Update(float t);
+	}
+
+	public class Tween {
+		public event Action? Finished;
+		public float TotalDuration => _delayFromWaitAll + _delayFromWait + _currentBatchMaxDuration;
+
+		private float _elapsed = 0.0f;
+		private float _delayFromWait = 0.0f;
+		private float _delayFromWaitAll = 0.0f;
+
+		private float _currentBatchMaxDuration = 0.0f;
+
+		private List<IPropertyTween> _propertyTweeners = new();
+		private bool _finished = false;
+
+
+		public Tween TweenProperty(Action<double> setter, double from, double to, float duration) {
+			var tweener = new PropertyTweener<double>() {
+				Setter = setter,
+				Lerp = (a, b, t) => GameMath.Lerp(a, b, t),
+				From = from,
+				To = to,
+				Duration = duration,
+				Delay = _delayFromWaitAll + _delayFromWait,
+			};
+			_propertyTweeners.Add(tweener);
+
+			_currentBatchMaxDuration = Math.Max(_currentBatchMaxDuration, duration);
+
+			return this;
+		}
+
+		public Tween WaitAll() {
+			_delayFromWaitAll += _currentBatchMaxDuration;
+			_delayFromWait = 0.0f;
+
+			_currentBatchMaxDuration = 0.0f;
+
+			return this;
+		}
+
+		public Tween Wait(float delay) {
+			_delayFromWait += delay;
+			return this;
+		}
+
+		public void Update(float deltaTime) {
+			_elapsed += deltaTime;
+			if (_finished) {
+				return;
+			}
+
+			_propertyTweeners.ForEach(tween => tween.Update(_elapsed));
+
+			if (_elapsed > TotalDuration) {
+				Finished?.Invoke();
+				_finished = true;
+			}
+		}
+
+		public void SeekTo(float seconds) {
+			_elapsed = seconds;
+			_finished = seconds >= TotalDuration;
+		}
+	}
+
 	public const string ID = "levelupnotification";
 
 	private readonly AssetLocation _levelUpSfx;
 	private readonly string _labelText;
-
-	private double _elapsed = 0.0;
-
-	private PropertyTweener<double>? _mainLabelScroll;
-	private PropertyTweener<double>? _mainLabelAlpha;
+	private Tween? _animation;
 
 	public HudLevelUp(ICoreClientAPI capi, Skill skill, int level)
 		: this(capi, skill.DisplayName, level) {
@@ -130,22 +195,14 @@ public class HudLevelUp : HudElement {
 			.Compose();
 
 		var label = SingleComposer.GetScrollingText("levelup-notification-animation-text");
-		_mainLabelScroll = new PropertyTweener<double>() {
-			Setter = (value) => label.VisibleFactor = value,
-			Lerp = (x, y, t) => GameMath.Lerp(x, y, t),
-			From = 0.0,
-			To = 1.0,
-			Duration = (float)FADE_IN_DURATION,
-		};
-		_mainLabelAlpha = new PropertyTweener<double>() {
-			Setter = (value) => label.Font.Color[3] = value,
-			Lerp = (x, y, t) => GameMath.Lerp(x, y, t),
-			From = 1.0f,
-			To = 0.0f,
-			Delay = (float)(FADE_IN_DURATION + FADE_DELAY),
-			Duration = (float)FADE_OUT_DURATION,
-		};
-		_mainLabelScroll.Update(0.0f);
+		_animation = new Tween()
+			.TweenProperty(v => label.VisibleFactor = v, 0.0, 1.0, (float)FADE_IN_DURATION)
+			.WaitAll()
+			.Wait((float)FADE_DELAY)
+			.TweenProperty(v => label.Font.Color[3] = v, 1.0, 0.0, (float)FADE_OUT_DURATION);
+
+		_animation.Finished += () => TryClose();
+		_animation.SeekTo(0.0f);
 
 		capi.World.PlaySoundAt(_levelUpSfx, capi.World.Player, randomizePitch: false);
 	}
@@ -154,15 +211,7 @@ public class HudLevelUp : HudElement {
 		base.OnBeforeRenderFrame3D(deltaTime);
 
 		if (IsOpened()) {
-			_elapsed += deltaTime;
-
-			_mainLabelAlpha?.Update((float)_elapsed);
-			_mainLabelScroll?.Update((float)_elapsed);
-
-			var totalDuration = FADE_IN_DURATION + FADE_DELAY + FADE_OUT_DURATION;
-			if (_elapsed > totalDuration) {
-				TryClose();
-			}
+			_animation?.Update(deltaTime);
 		}
 	}
 
