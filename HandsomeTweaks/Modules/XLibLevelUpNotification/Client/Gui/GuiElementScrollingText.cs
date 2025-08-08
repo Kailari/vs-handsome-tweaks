@@ -1,49 +1,24 @@
-using System;
-using System.Linq;
-
 using Cairo;
 
 using Vintagestory.API.Client;
+using Vintagestory.API.MathTools;
 
 namespace Jakojaannos.HandsomeTweaks.Modules.XLibLevelUpNotification.Client.Gui;
 
 public class GuiElementScrollingText : GuiElementTextBase {
-	private double LastLetterOpacity {
-		get => _lastLetterOpacity;
-		set {
-			_lastLetterOpacity = Math.Clamp(value, 0.0, 1.0);
-			_transparentFont.Color[3] = _lastLetterOpacity;
-		}
-	}
-	private double _lastLetterOpacity = 1.0;
-
-	private Range VisibleRange {
-		get => _range;
-		set => _range = value;
-	}
-	private Range _range = ..;
-
 	public double VisibleFactor {
+		get => _visibleFactor;
 		set {
-			var letters = Math.Clamp(Text.Length * value, 0.0, Text.Length);
-			var overflow = letters - (int)letters;
-
-			VisibleRange = ..(int)letters;
-			LastLetterOpacity = letters < Text.Length
-				? overflow
-				: 1.0;
-
+			_visibleFactor = value;
 			RecomposeText();
 		}
 	}
+	private double _visibleFactor = 1.0;
 
 	private LoadedTexture _textTexture;
-	private readonly CairoFont _transparentFont;
 
 	public GuiElementScrollingText(ICoreClientAPI capi, string text, CairoFont font, ElementBounds bounds) : base(capi, text, font, bounds) {
 		_textTexture = new LoadedTexture(capi);
-		_transparentFont = font.Clone();
-		_transparentFont.Color[3] = _lastLetterOpacity;
 	}
 
 	public override void ComposeTextElements(Context ctx, ImageSurface surface) {
@@ -54,22 +29,42 @@ public class GuiElementScrollingText : GuiElementTextBase {
 	public void RecomposeText() {
 		var imageSurface = new ImageSurface(Format.Argb32, (int)Bounds.InnerWidth, (int)Bounds.InnerHeight);
 
-		var isLastLetterFullyOpaque = LastLetterOpacity > 0.999f;
 		var context = genContext(imageSurface);
+		Font.SetupContext(context);
+		context.Operator = Operator.Source;
+		context.Antialias = Antialias.None;
 
-		var visible = Text[VisibleRange];
-		if (visible.Length == 0 || isLastLetterFullyOpaque) {
-			Font.SetupContext(context);
-			textUtil.DrawTextLine(context, Font, visible, 0.0, 0.0, textPathMode);
-		} else {
-			var currText = visible[..^1];
-			var nextText = visible;
+		var maxGradientLetters = Text.Length;
+		var visible = VisibleFactor * (Text.Length + maxGradientLetters);
 
-			_transparentFont.SetupContext(context);
-			textUtil.DrawTextLine(context, _transparentFont, nextText, 0.0, 0.0, textPathMode);
-			Font.SetupContext(context);
-			textUtil.DrawTextLine(context, Font, currText, 0.0, 0.0, textPathMode);
+		var opaqueLetters = 0;
+		var alpha = Font.Color[3];
+		for (var letterIndex = Text.Length - 1; letterIndex >= 0; letterIndex--) {
+			var gradientLow = visible - maxGradientLetters;
+			var gradientHigh = gradientLow + maxGradientLetters;
+			var letterOpacity = 1.0 - GameMath.Smootherstep(gradientLow, gradientHigh, letterIndex);
+			if (letterOpacity < 0.01) {
+				continue;
+			}
+
+			if (letterOpacity > 0.99) {
+				opaqueLetters++;
+				continue;
+			}
+
+			var text = Text[..(letterIndex + 1)];
+			Font.Color[3] = alpha * letterOpacity;
+			context.SetSourceRGBA(Font.Color);
+			context.MoveTo(0, (int)(0 + context.FontExtents.Ascent));
+			context.ShowText(text);
 		}
+
+		var opaqueText = Text[..opaqueLetters];
+		Font.Color[3] = alpha;
+		context.SetSourceRGBA(Font.Color);
+		context.MoveTo(0, (int)(0 + context.FontExtents.Ascent));
+		context.Antialias = Antialias.Default;
+		context.ShowText(opaqueText);
 
 		generateTexture(imageSurface, ref _textTexture);
 		context.Dispose();
