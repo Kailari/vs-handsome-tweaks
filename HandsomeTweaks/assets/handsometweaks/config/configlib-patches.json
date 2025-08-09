@@ -1,7 +1,13 @@
 {
     "version": 1,
     "file": "jakojaannos/handsometweaks.json",
-    "patches": { },
+    "patches": {
+        "boolean": {
+            "handsometweaks:patches/resonator-accepts-mp.patch.json": {
+                "/enabled": "Startup/IsResonatorMechanicalPowerEnabled"
+            }
+        }
+    },
     "settings": [
         {
             "type": "separator",
