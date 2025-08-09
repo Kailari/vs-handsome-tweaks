@@ -11,6 +11,14 @@
                 "label": "Enable Module: Keep Handbook History",
                 "comment": "Adds support for retaining handbook history when closing the GUI. Requires restart."
             },
+            "resonatormechanicalpowerenabled": {
+                "label": "Enable Module: Resonator Accepts Mechanical Power",
+                "comment": "Allows Resonator to accept mechanical power to keep the music looping indefinitely."
+            },
+            "xliblevelupnotificationenabled": {
+                "label": "Enable Module: XLib Level-up notification",
+                "comment": "Adds an on-screen notification on skill level-ups."
+            },
             "structuredtranslationenabled": {
                 "label": "Enable Module: Structured Translation Strings Patch",
                 "comment": "Adds supports structured lang files. Does invasive patching of TranslationService, disable this only if something breaks.\n\nNOTE: Disabling this breaks the translation strings from this mod."

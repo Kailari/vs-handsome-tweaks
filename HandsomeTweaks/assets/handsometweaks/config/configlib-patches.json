@@ -83,6 +83,20 @@
         },
         {
             "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-resonatormechanicalpowerenabled-label",
+            "code": "Startup/IsResonatorMechanicalPowerEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-resonatormechanicalpowerenabled-comment"
+        },
+        {
+            "type": "boolean",
+            "ingui": "handsometweaks:settings-startup-xliblevelupnotificationenabled-label",
+            "code": "Startup/IsXLibLevelUpNotificationEnabled",
+            "default": true,
+            "comment": "handsometweaks:settings-startup-xliblevelupnotificationenabled-comment"
+        },
+        {
+            "type": "boolean",
             "ingui": "handsometweaks:settings-startup-structuredtranslationenabled-label",
             "code": "Startup/IsStructuredTranslationEnabled",
             "default": true,

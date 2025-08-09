@@ -37,7 +37,7 @@ public class HudLevelUp : HudElement {
 	}
 
 	private static string FormatSkillLevelUpMessage(string skill, int level) {
-		return Lang.Get(Guis.TranslationKey("xskills/level-up/label"), skill, level);
+		return Lang.Get(Guis.TranslationKey("xskills/level-up/label"), skill, level.ToString());
 	}
 
 	private static string FormatOpenSkillUIHint(ICoreClientAPI capi) {
